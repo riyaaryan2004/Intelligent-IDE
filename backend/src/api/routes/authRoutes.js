@@ -5,7 +5,6 @@ const authService = require('../services/authService');
 const validation = require('../middleware/validation');
 const { auth } = require('../middleware/auth');
 const { catchAsync } = require('../middleware/errorHandler');
-const { validateRequest } = require('../middleware/requestValidator');
 
 router.post('/register',
     validateRequest(validation.registrationSchema),

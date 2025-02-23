@@ -1,35 +1,26 @@
 // src/api/middleware/auth.js
-
 const jwt = require('jsonwebtoken');
 const User = require('../../models/User');
 const logger = require('../../utils/logger');
 
+// Auth middleware - return the function directly
 const auth = async (req, res, next) => {
     try {
-        // Get token from header
         const token = req.header('Authorization')?.replace('Bearer ', '');
-
         if (!token) {
             return res.status(401).json({ error: 'No authentication token provided' });
         }
 
         try {
-            // Verify token
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            
-            // Find user
-            const user = await User.findById(decoded.userId)
-                .select('-password') // Exclude password
-                .lean(); // Convert to plain object
+            const user = await User.findById(decoded.userId).select('-password').lean();
 
             if (!user) {
-                throw new Error('User not found');
+                return res.status(401).json({ error: 'User not found' });
             }
 
-            // Add user and token to request
             req.user = user;
             req.token = token;
-            
             next();
         } catch (error) {
             if (error.name === 'TokenExpiredError') {
@@ -43,9 +34,9 @@ const auth = async (req, res, next) => {
     }
 };
 
-// Optional: Role-based authentication middleware
-const authRole = (allowedRoles) => {
-    return (req, res, next) => {
+// Role-based auth middleware
+const authRole = (allowedRoles) => async (req, res, next) => {
+    try {
         if (!req.user) {
             return res.status(401).json({ error: 'Authentication required' });
         }
@@ -55,8 +46,13 @@ const authRole = (allowedRoles) => {
         }
 
         next();
-    };
+    } catch (error) {
+        logger.error('Role authorization error:', error);
+        res.status(403).json({ error: 'Access denied' });
+    }
 };
+
+console.log("Auth Middleware Loaded", { auth, authRole });
 
 module.exports = {
     auth,

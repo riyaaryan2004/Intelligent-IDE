@@ -77,12 +77,13 @@ const errorHandler = (err, req, res, next) => {
     });
 };
 
-// Async error handler wrapper
 const catchAsync = (fn) => {
     return (req, res, next) => {
         Promise.resolve(fn(req, res, next)).catch(next);
     };
 };
+
+console.log("err handler Middleware Loaded", {errorHandler,catchAsync,APIError});
 
 module.exports = {
     errorHandler,

@@ -4,148 +4,159 @@ const router = express.Router();
 const testService = require('../services/testService');
 const { auth, authRole } = require('../middleware/auth');
 const { catchAsync } = require('../middleware/errorHandler');
-const { validateRequest } = require('../middleware/requestValidator');
-const { rateLimit } = require('../middleware/rateLimiter');
+const rateLimit = require('../middleware/rateLimiter');
 const validation = require('../middleware/validation');
 const cache = require('../middleware/cache');
 
-// Rate limit for test generation
+// Route handlers
+const generateTests = async (req, res) => {
+    const { code, language, coverage = 80 } = req.body;
+    const tests = await testService.generateTests({
+        code,
+        language,
+        coverage,
+        userId: req.user._id
+    });
+    res.json({
+        status: 'success',
+        data: { tests }
+    });
+};
+
+const runTests = async (req, res) => {
+    const { code, tests, language } = req.body;
+    const results = await testService.runTests({
+        code,
+        tests,
+        language,
+        userId: req.user._id
+    });
+    res.json({
+        status: 'success',
+        data: { results }
+    });
+};
+
+const saveTestCase = async (req, res) => {
+    const { name, testCode, type, codeSnippetId } = req.body;
+    const testCase = await testService.saveTestCase({
+        name,
+        testCode,
+        type,
+        codeSnippetId,
+        userId: req.user._id
+    });
+    res.json({
+        status: 'success',
+        data: { testCase }
+    });
+};
+
+const getTestHistory = async (req, res) => {
+    const history = await testService.getTestHistory(
+        req.params.snippetId,
+        req.user._id
+    );
+    res.json({
+        status: 'success',
+        data: { history }
+    });
+};
+
+const getTestCoverage = async (req, res) => {
+    const coverage = await testService.getTestCoverage(
+        req.params.snippetId,
+        req.user._id
+    );
+    res.json({
+        status: 'success',
+        data: { coverage }
+    });
+};
+
+const getTestCases = async (req, res) => {
+    const testCases = await testService.getTestCases(
+        req.params.snippetId,
+        req.user._id
+    );
+    res.json({
+        status: 'success',
+        data: { testCases }
+    });
+};
+
+const updateTestCase = async (req, res) => {
+    const { name, testCode, type } = req.body;
+    const updatedTest = await testService.updateTestCase(
+        req.params.testId,
+        { name, testCode, type },
+        req.user._id
+    );
+    res.json({
+        status: 'success',
+        data: { testCase: updatedTest }
+    });
+};
+
+const deleteTestCase = async (req, res) => {
+    await testService.deleteTestCase(req.params.testId, req.user._id);
+    res.json({
+        status: 'success',
+        message: 'Test case deleted successfully'
+    });
+};
+
+// Rate limiter middleware
 const testGenerationLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 50 // limit each IP to 50 requests per windowMs
+    windowMs: 15 * 60 * 1000,
+    max: 50
 });
 
-router.post('/generate',
+// Routes
+router.post('/generate', [
     auth,
     testGenerationLimiter,
-    validateRequest(validation.testGenerationSchema),
-    catchAsync(async (req, res) => {
-        const { code, language, coverage = 80 } = req.body;
-        const tests = await testService.generateTests({
-            code,
-            language,
-            coverage,
-            userId: req.user._id
-        });
-        res.json({
-            status: 'success',
-            data: { tests }
-        });
-    })
-);
+    validation.validateTestCase(),
+    catchAsync(generateTests)
+]);
 
-router.post('/run',
+router.post('/run', [
     auth,
-    validateRequest(validation.testRunSchema),
-    catchAsync(async (req, res) => {
-        const { code, tests, language } = req.body;
-        const results = await testService.runTests({
-            code,
-            tests,
-            language,
-            userId: req.user._id
-        });
-        res.json({
-            status: 'success',
-            data: { results }
-        });
-    })
-);
+    validation.validateTestCase()
+], catchAsync(runTests));
 
-router.post('/save',
-    auth,
-    validateRequest(validation.testCaseSchema),
-    catchAsync(async (req, res) => {
-        const { name, testCode, type, codeSnippetId } = req.body;
-        const testCase = await testService.saveTestCase({
-            name,
-            testCode,
-            type,
-            codeSnippetId,
-            userId: req.user._id
-        });
-        res.json({
-            status: 'success',
-            data: { testCase }
-        });
-    })
-);
 
-router.get('/history/:snippetId',
+router.post('/save', [
     auth,
-    validateRequest(validation.snippetIdSchema, 'params'),
-    cache(300), // Cache for 5 minutes
-    catchAsync(async (req, res) => {
-        const history = await testService.getTestHistory(
-            req.params.snippetId,
-            req.user._id
-        );
-        res.json({
-            status: 'success',
-            data: { history }
-        });
-    })
-);
+    validation.validateTestCase()
+], catchAsync(saveTestCase));
 
-router.get('/coverage/:snippetId',
+router.get('/history/:snippetId', [
     auth,
-    validateRequest(validation.snippetIdSchema, 'params'),
-    cache(300),
-    catchAsync(async (req, res) => {
-        const coverage = await testService.getTestCoverage(
-            req.params.snippetId,
-            req.user._id
-        );
-        res.json({
-            status: 'success',
-            data: { coverage }
-        });
-    })
-);
+    validation.validateTestCase(),
+    cache(300)
+], catchAsync(getTestHistory));
 
-router.get('/cases/:snippetId',
+router.get('/coverage/:snippetId', [
     auth,
-    validateRequest(validation.snippetIdSchema, 'params'),
-    cache(300),
-    catchAsync(async (req, res) => {
-        const testCases = await testService.getTestCases(
-            req.params.snippetId,
-            req.user._id
-        );
-        res.json({
-            status: 'success',
-            data: { testCases }
-        });
-    })
-);
+    validation.validateTestCase(),
+    cache(300)
+], catchAsync(getTestCoverage));
 
-router.put('/case/:testId',
+router.get('/cases/:snippetId', [
     auth,
-    validateRequest(validation.testUpdateSchema),
-    catchAsync(async (req, res) => {
-        const { name, testCode, type } = req.body;
-        const updatedTest = await testService.updateTestCase(
-            req.params.testId,
-            { name, testCode, type },
-            req.user._id
-        );
-        res.json({
-            status: 'success',
-            data: { testCase: updatedTest }
-        });
-    })
-);
+    validation.validateTestCase(),
+    cache(300)
+], catchAsync(getTestCases));
 
-router.delete('/case/:testId',
+router.put('/case/:testId', [
     auth,
-    validateRequest(validation.testIdSchema, 'params'),
-    catchAsync(async (req, res) => {
-        await testService.deleteTestCase(req.params.testId, req.user._id);
-        res.json({
-            status: 'success',
-            message: 'Test case deleted successfully'
-        });
-    })
-);
+    validation.validateTestCase()
+], catchAsync(updateTestCase));
+
+router.delete('/case/:testId', [
+    auth,
+    validation.validateTestCase()
+], catchAsync(deleteTestCase));
 
 module.exports = router;

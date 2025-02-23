@@ -7,7 +7,6 @@ const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
-
 // Load environment variables
 dotenv.config();
 
@@ -21,8 +20,8 @@ const { connectDB } = require('./src/api/config/database');
 const codeRoutes = require('./src/api/routes/codeRoutes');
 const testRoutes = require('./src/api/routes/testRoutes');
 const debugRoutes = require('./src/api/routes/debugRoutes');
-const projectRoutes = require('./src/api/routes/projectRoutes');
-const authRoutes = require('./src/api/routes/authRoutes');
+//const projectRoutes = require('./src/api/routes/projectRoutes');
+//const authRoutes = require('./src/api/routes/authRoutes');
 
 // Import middleware
 const { errorHandler } = require('./src/api/middleware/errorHandler');
@@ -69,11 +68,11 @@ app.get('/health', (req, res) => {
 });
 
 // API routes
-app.use('/api/auth', authRoutes);
+//app.use('/api/auth', authRoutes);
 app.use('/api/code', auth, codeRoutes);
 app.use('/api/test', auth, testRoutes);
 app.use('/api/debug', auth, debugRoutes);
-app.use('/api/projects', auth, projectRoutes);
+//app.use('/api/projects', auth, projectRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -85,6 +84,7 @@ app.use('*', (req, res) => {
 
 // Global error handling
 app.use(errorHandler);
+console.log("helloooooooooooo");
 
 // Graceful shutdown function
 const gracefulShutdown = async () => {
