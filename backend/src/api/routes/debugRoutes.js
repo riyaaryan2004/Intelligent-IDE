@@ -2,39 +2,59 @@
 const express = require('express');
 const router = express.Router();
 const debugService = require('../services/debugService');
+const { auth, authRole } = require('../middleware/auth');
+const { catchAsync } = require('../middleware/errorHandler');
+const { validateRequest } = require('../middleware/requestValidator');
+const { rateLimit } = require('../middleware/rateLimiter');
+const validation = require('../middleware/validation');
+const cache = require('../middleware/cache');
 
-// Debug code
-router.post('/analyze', async (req, res) => {
-    try {
+// Rate limit for debug analysis
+const debugAnalysisLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100
+});
+
+router.post('/analyze',
+    auth,
+    debugAnalysisLimiter,
+    validateRequest(validation.debugAnalysisSchema),
+    catchAsync(async (req, res) => {
         const { code, language } = req.body;
         const analysis = await debugService.analyzeCode({
             code,
-            language
+            language,
+            userId: req.user._id
         });
-        res.json(analysis);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+        res.json({
+            status: 'success',
+            data: { analysis }
+        });
+    })
+);
 
-// Fix bugs
-router.post('/fix', async (req, res) => {
-    try {
+router.post('/fix',
+    auth,
+    validateRequest(validation.bugFixSchema),
+    catchAsync(async (req, res) => {
         const { code, language, error } = req.body;
         const fixes = await debugService.suggestFixes({
             code,
             language,
-            error
+            error,
+            userId: req.user._id
         });
-        res.json(fixes);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+        res.json({
+            status: 'success',
+            data: { fixes }
+        });
+    })
+);
 
-// Run debug session
-router.post('/session', async (req, res) => {
-    try {
+router.post('/session',
+    auth,
+    validateRequest(validation.debugSessionSchema),
+    catchAsync(async (req, res) => {
         const { code, language, breakpoints } = req.body;
         const session = await debugService.startDebugSession({
             code,
@@ -42,31 +62,70 @@ router.post('/session', async (req, res) => {
             breakpoints,
             userId: req.user._id
         });
-        res.json(session);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+        res.json({
+            status: 'success',
+            data: { session }
+        });
+    })
+);
 
-// Get variable state
-router.post('/state', async (req, res) => {
-    try {
+router.post('/state',
+    auth,
+    validateRequest(validation.debugStateSchema),
+    catchAsync(async (req, res) => {
         const { sessionId, lineNumber } = req.body;
-        const state = await debugService.getVariableState(sessionId, lineNumber);
-        res.json(state);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+        const state = await debugService.getVariableState(
+            sessionId,
+            lineNumber,
+            req.user._id
+        );
+        res.json({
+            status: 'success',
+            data: { state }
+        });
+    })
+);
 
-// End debug session
-router.delete('/session/:sessionId', async (req, res) => {
-    try {
-        await debugService.endDebugSession(req.params.sessionId);
-        res.json({ message: 'Debug session ended successfully' });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+router.delete('/session/:sessionId',
+    auth,
+    validateRequest(validation.sessionIdSchema, 'params'),
+    catchAsync(async (req, res) => {
+        await debugService.endDebugSession(req.params.sessionId, req.user._id);
+        res.json({
+            status: 'success',
+            message: 'Debug session ended successfully'
+        });
+    })
+);
+
+// Get debug session history
+router.get('/sessions',
+    auth,
+    cache(300),
+    catchAsync(async (req, res) => {
+        const sessions = await debugService.getDebugSessions(req.user._id);
+        res.json({
+            status: 'success',
+            data: { sessions }
+        });
+    })
+);
+
+// Get specific debug session details
+router.get('/session/:sessionId',
+    auth,
+    validateRequest(validation.sessionIdSchema, 'params'),
+    cache(60),
+    catchAsync(async (req, res) => {
+        const session = await debugService.getDebugSession(
+            req.params.sessionId,
+            req.user._id
+        );
+        res.json({
+            status: 'success',
+            data: { session }
+        });
+    })
+);
 
 module.exports = router;

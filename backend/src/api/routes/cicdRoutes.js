@@ -2,93 +2,194 @@
 const express = require('express');
 const router = express.Router();
 const cicdService = require('../services/cicdService');
+const { auth, authRole } = require('../middleware/auth');
+const { catchAsync } = require('../middleware/errorHandler');
+const { validateRequest } = require('../middleware/requestValidator');
+const { rateLimit } = require('../middleware/rateLimiter');
 const validation = require('../middleware/validation');
+const cache = require('../middleware/cache');
 
-// Initialize pipeline
-router.post('/pipeline/init', validation.validatePipeline, async (req, res) => {
-    try {
+// Rate limiting for CI/CD operations
+const cicdLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 100 // limit each IP to 100 requests per hour
+});
+
+// Pipeline Routes
+router.post('/pipeline/init',
+    auth,
+    authRole(['admin', 'developer']),
+    validateRequest(validation.pipelineInitSchema),
+    catchAsync(async (req, res) => {
         const { projectId, config } = req.body;
         const pipeline = await cicdService.initializePipeline({
             projectId,
             config,
             userId: req.user._id
         });
-        res.json(pipeline);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+        res.json({
+            status: 'success',
+            data: { pipeline }
+        });
+    })
+);
 
-// Trigger build
-router.post('/build', async (req, res) => {
-    try {
-        const { projectId, branch } = req.body;
+router.get('/pipeline/:projectId',
+    auth,
+    validateRequest(validation.projectIdSchema, 'params'),
+    cache(300),
+    catchAsync(async (req, res) => {
+        const config = await cicdService.getPipelineConfig(
+            req.params.projectId,
+            req.user._id
+        );
+        res.json({
+            status: 'success',
+            data: { config }
+        });
+    })
+);
+
+router.put('/pipeline/:projectId',
+    auth,
+    authRole(['admin', 'developer']),
+    validateRequest(validation.pipelineUpdateSchema),
+    catchAsync(async (req, res) => {
+        const { config } = req.body;
+        const updated = await cicdService.updatePipelineConfig(
+            req.params.projectId,
+            config,
+            req.user._id
+        );
+        res.json({
+            status: 'success',
+            data: { pipeline: updated }
+        });
+    })
+);
+
+// Build Routes
+router.post('/build',
+    auth,
+    cicdLimiter,
+    validateRequest(validation.buildInitSchema),
+    catchAsync(async (req, res) => {
+        const { projectId, branch = 'main', config } = req.body;
         const build = await cicdService.triggerBuild({
             projectId,
             branch,
+            config,
             userId: req.user._id
         });
-        res.json(build);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+        res.json({
+            status: 'success',
+            data: { build }
+        });
+    })
+);
 
-// Get build status
-router.get('/build/:buildId', async (req, res) => {
-    try {
-        const status = await cicdService.getBuildStatus(req.params.buildId);
-        res.json(status);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+router.get('/build/:buildId',
+    auth,
+    validateRequest(validation.buildIdSchema, 'params'),
+    catchAsync(async (req, res) => {
+        const status = await cicdService.getBuildStatus(
+            req.params.buildId,
+            req.user._id
+        );
+        res.json({
+            status: 'success',
+            data: { buildStatus: status }
+        });
+    })
+);
 
-// Deploy application
-router.post('/deploy', validation.validateDeployment, async (req, res) => {
-    try {
-        const { projectId, environment, version } = req.body;
+router.get('/builds/:projectId',
+    auth,
+    validateRequest(validation.projectIdSchema, 'params'),
+    cache(300),
+    catchAsync(async (req, res) => {
+        const { page = 1, limit = 10 } = req.query;
+        const builds = await cicdService.getProjectBuilds(
+            req.params.projectId,
+            req.user._id,
+            { page, limit }
+        );
+        res.json({
+            status: 'success',
+            data: { builds }
+        });
+    })
+);
+
+// Deployment Routes
+router.post('/deploy',
+    auth,
+    authRole(['admin', 'developer']),
+    validateRequest(validation.deploymentSchema),
+    catchAsync(async (req, res) => {
+        const { projectId, environment, version, config } = req.body;
         const deployment = await cicdService.deploy({
             projectId,
             environment,
             version,
+            config,
             userId: req.user._id
         });
-        res.json(deployment);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+        res.json({
+            status: 'success',
+            data: { deployment }
+        });
+    })
+);
 
-// Get deployment status
-router.get('/deploy/:deploymentId', async (req, res) => {
-    try {
-        const status = await cicdService.getDeploymentStatus(req.params.deploymentId);
-        res.json(status);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+router.get('/deploy/:deploymentId',
+    auth,
+    validateRequest(validation.deploymentIdSchema, 'params'),
+    catchAsync(async (req, res) => {
+        const status = await cicdService.getDeploymentStatus(
+            req.params.deploymentId,
+            req.user._id
+        );
+        res.json({
+            status: 'success',
+            data: { deploymentStatus: status }
+        });
+    })
+);
 
-// Get pipeline configuration
-router.get('/pipeline/:projectId', async (req, res) => {
-    try {
-        const config = await cicdService.getPipelineConfig(req.params.projectId);
-        res.json(config);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+router.get('/deployments/:projectId',
+    auth,
+    validateRequest(validation.projectIdSchema, 'params'),
+    cache(300),
+    catchAsync(async (req, res) => {
+        const { page = 1, limit = 10, environment } = req.query;
+        const deployments = await cicdService.getProjectDeployments(
+            req.params.projectId,
+            req.user._id,
+            { page, limit, environment }
+        );
+        res.json({
+            status: 'success',
+            data: { deployments }
+        });
+    })
+);
 
-// Update pipeline configuration
-router.put('/pipeline/:projectId', validation.validatePipeline, async (req, res) => {
-    try {
-        const { config } = req.body;
-        const updated = await cicdService.updatePipelineConfig(req.params.projectId, config);
-        res.json(updated);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+// Pipeline Metrics
+router.get('/metrics/:projectId',
+    auth,
+    validateRequest(validation.projectIdSchema, 'params'),
+    cache(300),
+    catchAsync(async (req, res) => {
+        const metrics = await cicdService.getPipelineMetrics(
+            req.params.projectId,
+            req.user._id
+        );
+        res.json({
+            status: 'success',
+            data: { metrics }
+        });
+    })
+);
 
 module.exports = router;

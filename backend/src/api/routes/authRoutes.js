@@ -3,106 +3,102 @@ const express = require('express');
 const router = express.Router();
 const authService = require('../services/authService');
 const validation = require('../middleware/validation');
-const auth = require('../middleware/auth');
+const { auth } = require('../middleware/auth');
+const { catchAsync } = require('../middleware/errorHandler');
+const { validateRequest } = require('../middleware/requestValidator');
 
-// Register new user
-router.post('/register', validation.validateRegistration, async (req, res) => {
-    try {
+router.post('/register',
+    validateRequest(validation.registrationSchema),
+    catchAsync(async (req, res) => {
         const { username, email, password } = req.body;
-        const user = await authService.register({
-            username,
-            email,
-            password
+        const user = await authService.register({ username, email, password });
+        res.status(201).json({
+            status: 'success',
+            data: { user }
         });
-        res.status(201).json(user);
-    } catch (error) {
-        res.status(400).json({ error: error.message });
-    }
-});
+    })
+);
 
-// Login
-router.post('/login', validation.validateLogin, async (req, res) => {
-    try {
+router.post('/login',
+    validateRequest(validation.loginSchema),
+    catchAsync(async (req, res) => {
         const { email, password } = req.body;
-        const { user, token } = await authService.login({
-            email,
-            password
+        const { user, token } = await authService.login({ email, password });
+        res.json({
+            status: 'success',
+            data: { user, token }
         });
-        res.json({ user, token });
-    } catch (error) {
-        res.status(401).json({ error: error.message });
-    }
-});
+    })
+);
 
-// Logout
-router.post('/logout', auth, async (req, res) => {
-    try {
+router.post('/logout',
+    auth,
+    catchAsync(async (req, res) => {
         await authService.logout(req.token);
-        res.json({ message: 'Logged out successfully' });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+        res.json({
+            status: 'success',
+            message: 'Logged out successfully'
+        });
+    })
+);
 
-// Get current user
-router.get('/me', auth, async (req, res) => {
-    try {
+router.get('/me',
+    auth,
+    catchAsync(async (req, res) => {
         const user = await authService.getCurrentUser(req.user._id);
-        res.json(user);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+        res.json({
+            status: 'success',
+            data: { user }
+        });
+    })
+);
 
-// Update user profile
-router.put('/profile', auth, validation.validateProfileUpdate, async (req, res) => {
-    try {
+router.put('/profile',
+    auth,
+    validateRequest(validation.profileUpdateSchema),
+    catchAsync(async (req, res) => {
         const { username, email } = req.body;
-        const updated = await authService.updateProfile(req.user._id, {
-            username,
-            email
+        const updated = await authService.updateProfile(req.user._id, { username, email });
+        res.json({
+            status: 'success',
+            data: { user: updated }
         });
-        res.json(updated);
-    } catch (error) {
-        res.status(400).json({ error: error.message });
-    }
-});
+    })
+);
 
-// Change password
-router.put('/password', auth, validation.validatePasswordChange, async (req, res) => {
-    try {
+router.put('/password',
+    auth,
+    validateRequest(validation.passwordChangeSchema),
+    catchAsync(async (req, res) => {
         const { currentPassword, newPassword } = req.body;
-        await authService.changePassword(req.user._id, {
-            currentPassword,
-            newPassword
+        await authService.changePassword(req.user._id, { currentPassword, newPassword });
+        res.json({
+            status: 'success',
+            message: 'Password updated successfully'
         });
-        res.json({ message: 'Password updated successfully' });
-    } catch (error) {
-        res.status(400).json({ error: error.message });
-    }
-});
+    })
+);
 
-// Reset password request
-router.post('/reset-password', validation.validateEmail, async (req, res) => {
-    try {
-        const { email } = req.body;
-        await authService.requestPasswordReset(email);
-        res.json({ message: 'Password reset email sent' });
-    } catch (error) {
-        res.status(400).json({ error: error.message });
-    }
-});
+router.post('/reset-password',
+    validateRequest(validation.emailSchema),
+    catchAsync(async (req, res) => {
+        await authService.requestPasswordReset(req.body.email);
+        res.json({
+            status: 'success',
+            message: 'Password reset email sent'
+        });
+    })
+);
 
-// Reset password with token
-router.post('/reset-password/:token', validation.validateNewPassword, async (req, res) => {
-    try {
-        const { token } = req.params;
-        const { newPassword } = req.body;
-        await authService.resetPassword(token, newPassword);
-        res.json({ message: 'Password reset successful' });
-    } catch (error) {
-        res.status(400).json({ error: error.message });
-    }
-});
+router.post('/reset-password/:token',
+    validateRequest(validation.resetPasswordSchema),
+    catchAsync(async (req, res) => {
+        await authService.resetPassword(req.params.token, req.body.newPassword);
+        res.json({
+            status: 'success',
+            message: 'Password reset successful'
+        });
+    })
+);
 
 module.exports = router;
