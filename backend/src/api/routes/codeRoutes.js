@@ -7,6 +7,7 @@ const { catchAsync } = require('../middleware/errorHandler');
 const rateLimit = require('../middleware/rateLimiter');
 const validation = require('../middleware/validation');
 const cache = require('../middleware/cache');
+const logger = require('../../utils/logger');
 
 // Create rate limiter instance
 const codeLimiter = rateLimit;
@@ -14,12 +15,16 @@ const codeLimiter = rateLimit;
 // Route Handlers
 const generateCode = catchAsync(async (req, res) => {
     const { prompt, language, context } = req.body;
+    console.log(prompt);
+    logger.info(prompt);
     const result = await codeService.generateCode({
         prompt,
         language,
         context,
         userId: req.user._id
     });
+    console.log("Generated Code:", generatedCode);
+
     res.json({
         status: 'success',
         data: result
@@ -89,7 +94,7 @@ const deleteSnippet = catchAsync(async (req, res) => {
 });
 
 // Routes
-router.post('/generate', [auth, codeLimiter, validation.validateCodeRequest], generateCode);
+router.post('/generate', [auth, validation.validateCodeRequest], generateCode);
 router.post('/analyze', [auth, validation.validateCodeRequest], analyzeCode);
 router.post('/optimize', [auth, validation.validateCodeRequest], optimizeCode);
 router.post('/save', [auth, validation.validateCodeSnippet], saveCodeSnippet);

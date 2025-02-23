@@ -20,8 +20,8 @@ const { connectDB } = require('./src/api/config/database');
 const codeRoutes = require('./src/api/routes/codeRoutes');
 const testRoutes = require('./src/api/routes/testRoutes');
 const debugRoutes = require('./src/api/routes/debugRoutes');
-//const projectRoutes = require('./src/api/routes/projectRoutes');
-//const authRoutes = require('./src/api/routes/authRoutes');
+const projectRoutes = require('./src/api/routes/projectRoutes');
+const authRoutes = require('./src/api/routes/authRoutes');
 
 // Import middleware
 const { errorHandler } = require('./src/api/middleware/errorHandler');
@@ -29,8 +29,11 @@ const { auth } = require('./src/api/middleware/auth');
 
 // Initialize express app
 const app = express();
-
+// Request parsing middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true}));
 // Security middleware
+
 app.use(helmet()); // Adds various HTTP headers for security
 app.use(compression()); // Compress responses
 
@@ -49,9 +52,7 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// Request parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
 
 // Logging middleware
 if (process.env.NODE_ENV === 'development') {
@@ -68,11 +69,11 @@ app.get('/health', (req, res) => {
 });
 
 // API routes
-//app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/code', auth, codeRoutes);
 app.use('/api/test', auth, testRoutes);
 app.use('/api/debug', auth, debugRoutes);
-//app.use('/api/projects', auth, projectRoutes);
+app.use('/api/projects', auth, projectRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

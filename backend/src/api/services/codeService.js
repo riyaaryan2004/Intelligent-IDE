@@ -11,14 +11,20 @@ class CodeService {
         const { prompt, language, projectId, userId, context = {} } = params;
 
         try {
-            // Generate code using Gemini
+            console.log('Generating code with:', { prompt, language, context });
             const generatedCode = await geminiService.generateCode(prompt, language, context);
+            console.log('Generated code:', generatedCode);
+            if (!generatedCode || !generatedCode[0]) {
+                throw new Error("Generated code is empty!");
+            }
             
             // Analyze the generated code
             const analysis = await geminiService.analyzeCode(generatedCode[0], language);
-            
+            console.log('Code analysis:', analysis);
+
             // Generate tests
             const tests = await geminiService.generateTests(generatedCode[0], language);
+            console.log('Generated tests:', tests);
 
             // Create code snippet
             const snippet = await CodeSnippet.create({
@@ -34,6 +40,7 @@ class CodeService {
                     timestamp: new Date()
                 }
             });
+            await snippet.save();
 
             // Update project with new snippet
             await Project.findByIdAndUpdate(projectId, {

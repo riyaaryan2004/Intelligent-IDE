@@ -2,21 +2,42 @@
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const config = require('../config/gemini');
+const logger = require('../../utils/logger');
+const API_KEY = process.env.GEMINI_API_KEY;
+if (!API_KEY) {
+    throw new Error("Missing GEMINI_API_KEY. Check your .env file.");
+}
 
 class GeminiService {
     constructor() {
-        this.genAI = new GoogleGenerativeAI(config.apiKey);
+        this.genAI = new GoogleGenerativeAI(API_KEY);
         this.model = this.genAI.getGenerativeModel({ model: "gemini-pro" });
     }
 
     async generateCode(prompt, language, context = {}) {
         try {
+            logger.info('Starting code generation...');
+            
             const enhancedPrompt = this.buildCodePrompt(prompt, language, context);
             const result = await this.model.generateContent(enhancedPrompt);
-            return this.extractCodeFromResponse(result.response.text());
+            if (!result || !result.response || !result.response.text) {
+                logger.error("Invalid response format from model.");
+                throw new Error("Invalid response from model.");
+            }
+    
+            const responseText = await result.response.text();
+            logger.info("Model response received.");
+    
+            const extractedCode = this.extractCodeFromResponse(responseText);
+            if (!extractedCode || extractedCode.length === 0) {
+                logger.error("Failed to extract code from model response.");
+                throw new Error("Failed to extract code from response.");
+            }
+
+            return extractedCode;
         } catch (error) {
-            throw new Error(`Code generation failed: ${error.message}`);
-        }
+            logger.error(`Code generation failed: ${error.message}`);
+            throw new Error(`Code generation failed: ${error.message}`);              }
     }
 
     async analyzeCode(code, language) {
