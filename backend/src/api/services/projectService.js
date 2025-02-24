@@ -42,7 +42,6 @@ class ProjectService {
     async getAllProjects(params) {
         try {
             const { userId, page = 1, limit = 10, search, language, sort } = params;
-
             // Build query
             const query = {
                 $or: [
@@ -50,6 +49,7 @@ class ProjectService {
                     { 'collaborators.user': userId }
                 ]
             };
+
 
             // Add search filter
             if (search) {
@@ -128,16 +128,22 @@ class ProjectService {
 
             // Check project exists and user has access
             const project = await this.getProjectById(projectId, userId);
+            console.log("project found");
 
             // Check if user is owner or admin
-            const userRole = project.collaborators.find(
-                c => c.user._id.toString() === userId.toString()
+            const userRole = project.collaborators?.find(
+                c => c?.user?._id?.toString() === userId?.toString()
             )?.role;
-
+            
+            console.log("Project ID:", projectId);
+            console.log("User ID:", userId);
+            console.log("Collaborators:", project.collaborators);
+            
+            
             if (!['owner', 'admin'].includes(userRole)) {
                 throw new APIError('Only owners and admins can update projects', 403);
             }
-
+            console.log("admin found");
             // Update project
             const updatedProject = await Project.findByIdAndUpdate(
                 projectId,

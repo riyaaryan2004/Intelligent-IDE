@@ -26,6 +26,10 @@ class CodeService {
             const tests = await geminiService.generateTests(generatedCode[0], language);
             console.log('Generated tests:', tests);
 
+            if (!projectId) {
+                throw new Error("Project ID is required");
+            }
+            console.log("project id found");
             // Create code snippet
             const snippet = await CodeSnippet.create({
                 name: prompt.substring(0, 50), // Use first 50 chars of prompt as name
@@ -151,6 +155,7 @@ class CodeService {
         const { code, language } = params;
 
         try {
+            console.log("in code service");
             const analysis = await geminiService.analyzeCode(code, language);
             return analysis;
         } catch (error) {
@@ -160,12 +165,15 @@ class CodeService {
     }
 
     async optimizeCode(params) {
-        const { code, language } = params;
+        const { code, language,requirements } = params;
 
         try {
-            const prompt = `Optimize this ${language} code for better performance and readability:\n${code}`;
+            const prompt = `Optimize the following ${language} code for better performance and readability. Ensure the following improvements: ${requirements}\n\nCode:\n${code}`;
             const optimizedCode = await geminiService.generateCode(prompt, language);
-            
+            if (!optimizedCode || optimizedCode.length === 0) {
+                throw new APIError('Failed to generate optimized code', 500);
+            }
+    
             return {
                 original: code,
                 optimized: optimizedCode[0],

@@ -25,9 +25,10 @@ const codeSnippetSchema = new mongoose.Schema({
     default: 1
   },
   analysis: {
-    type: Map,
-    of: String,
-    default: {}
+    improvements: { type: [String], default: [] }, // Changed to array of strings
+    bugs: { type: [String], default: [] },
+    securityIssues: { type: [String], default: [] },
+    recommendations: { type: [String], default: [] }
   },
   metadata: {
     type: Map,

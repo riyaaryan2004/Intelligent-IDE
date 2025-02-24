@@ -17,17 +17,17 @@ class GeminiService {
     async generateCode(prompt, language, context = {}) {
         try {
             logger.info('Starting code generation...');
-            
+
             const enhancedPrompt = this.buildCodePrompt(prompt, language, context);
             const result = await this.model.generateContent(enhancedPrompt);
             if (!result || !result.response || !result.response.text) {
                 logger.error("Invalid response format from model.");
                 throw new Error("Invalid response from model.");
             }
-    
+
             const responseText = await result.response.text();
             logger.info("Model response received.");
-    
+
             const extractedCode = this.extractCodeFromResponse(responseText);
             if (!extractedCode || extractedCode.length === 0) {
                 logger.error("Failed to extract code from model response.");
@@ -37,15 +37,64 @@ class GeminiService {
             return extractedCode;
         } catch (error) {
             logger.error(`Code generation failed: ${error.message}`);
-            throw new Error(`Code generation failed: ${error.message}`);              }
+            throw new Error(`Code generation failed: ${error.message}`);
+        }
     }
 
     async analyzeCode(code, language) {
         try {
-            const analysis = await this.model.generateContent([
-                `Analyze this ${language} code for potential improvements, bugs, and security issues:\n${code}`
-            ]);
-            return this.parseAnalysis(analysis.response.text());
+            console.log("inside gemini sevice analyse code");
+            const prompt = `You are an expert code analyzer specializing in ${language} performance and security. Analyze the following ${language} code, focusing on time complexity, security vulnerabilities, and adherence to best practices. Provide your response in this structured JSON format:
+
+                {
+                "improvements": [
+                    {
+                    "description": "Detailed explanation of the improvement.",
+                    "reason": "Why this improvement is necessary.",
+                    "codeFix": "Example code fix, if applicable."
+                    }
+                ],
+                "bugs": [
+                    {
+                    "description": "Description of the bug.",
+                    "location": "Line number or code section.",
+                    "fix": "Corrected code or explanation of the fix."
+                    }
+                ],
+                "securityIssues": [
+                    {
+                    "vulnerability": "Type of vulnerability (e.g., SQL injection, XSS).",
+                    "location": "Code section.",
+                    "mitigation": "Strategies to prevent the vulnerability."
+                    }
+                ],
+                "recommendations": [
+                    "Best practices and coding style suggestions."
+                ]
+                }
+
+                Here is the ${language} code:
+                \`\`\`${language}
+                ${code}
+                \`\`\`
+
+                Prioritize critical security issues and bugs. Make sure all fields are present, even if they are empty arrays. Provide detailed explanations for each improvement, bug, and security issue. If possible provide time and space complexity analysis.
+                `;
+
+            const analysis = await this.model.generateContent([prompt]);
+
+            const responseText = typeof analysis.text === 'function'
+                ? await analysis.text()
+                : analysis.response ? await analysis.response.text() : '';
+
+            console.log("Raw Response:", responseText, " done");
+
+            if (!responseText) {
+                throw new Error("Empty response from AI model");
+            }
+            const parsedAnalysis = this.parseAnalysis(responseText);
+            return parsedAnalysis;
+
         } catch (error) {
             throw new Error(`Code analysis failed: ${error.message}`);
         }
@@ -95,12 +144,29 @@ class GeminiService {
     }
 
     parseAnalysis(analysis) {
-        return {
-            improvements: this.extractSection(analysis, 'Improvements'),
-            bugs: this.extractSection(analysis, 'Bugs'),
-            securityIssues: this.extractSection(analysis, 'Security Issues'),
-            recommendations: this.extractSection(analysis, 'Recommendations')
-        };
+        if (!analysis || typeof analysis !== "string") {
+            console.error("🚨 Invalid analysis provided to parseAnalysis:", analysis);
+            return { improvements: [], bugs: [], securityIssues: [], recommendations: [] };
+        }
+        try {
+            // 🚀 Remove backticks and trim whitespace
+            const cleanText = analysis.replace(/```json|```/g, "").trim();
+            
+            console.log("📌 Cleaned Response Text:", cleanText);
+            const parsedData = JSON.parse(cleanText);
+            console.log("✅ Parsed JSON:", parsedData);
+    
+            return {
+                improvements: parsedData.improvements || [],
+                bugs: parsedData.bugs || [],
+                securityIssues: parsedData.securityIssues || [],
+                recommendations: parsedData.recommendations || []
+            };
+        } catch (error) {
+            console.error("🚨 JSON Parse Error:", error);
+            console.error("🚨 Raw Response (Before Cleanup):", analysis);
+            throw new Error("Invalid JSON received from GeminiService");
+        }
     }
 
     extractTestsFromResponse(response) {

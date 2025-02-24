@@ -18,15 +18,24 @@ const validation = {
     validateCodeRequest : (req, res, next) => {
         try {
             if (req.method === 'POST') {
-                const { prompt, language } = req.body;
+                const {code = null, prompt = null, language = null } = req.body;
                 logger.info('req.body code', req.body);
-
-                if (!prompt || !language) {
-                    throw new APIError('Prompt and language are required', 400);
+                if (req.path === '/generate') {
+                    if (!prompt || !language) {
+                        throw new APIError('Prompt and language are required', 400);
+                    }
+                    if (typeof prompt !== 'string' || prompt.trim().length === 0) {
+                        throw new APIError('Invalid prompt format', 400);
+                    }
                 }
-    
-                if (typeof prompt !== 'string' || prompt.trim().length === 0) {
-                    throw new APIError('Invalid prompt format', 400);
+
+                if (req.path === '/analyze') {
+                    if (!code || !language) {
+                        throw new APIError('Code and language are required', 400);
+                    }
+                    if (typeof code !== 'string' || code.trim().length === 0) {
+                        throw new APIError('Invalid code format', 400);
+                    }
                 }
     
                 const supportedLanguages = ['javascript', 'python', 'java', 'cpp', 'typescript'];

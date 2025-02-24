@@ -68,6 +68,7 @@ const getProjectById = catchAsync(async (req, res) => {
 
 const updateProject = catchAsync(async (req, res) => {
     const { name, description, language, settings } = req.body;
+    console.log("updating");
     const project = await projectService.updateProject(
         req.params.projectId,
         {
@@ -152,7 +153,7 @@ const getProjectActivity = catchAsync(async (req, res) => {
 router.post(
     '/',
     auth,
-    projectLimiter,
+    //projectLimiter,
     validation.validateProjectCreate,
     createProject
 );
@@ -219,3 +220,9 @@ router.get(
 );
 
 module.exports = router;
+
+
+//need to debug 
+// add colaborator route
+//remove colaborator
+//project activity

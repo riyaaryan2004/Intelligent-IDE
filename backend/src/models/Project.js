@@ -32,7 +32,13 @@ const projectSchema = new mongoose.Schema({
     type: Map,
     of: String,
     default: {}
-  }
+  },
+  collaborators: [
+    {
+      user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Reference to User model
+      role: { type: String, enum: ['owner', 'editor', 'viewer'], default: 'viewer' } // Optional role
+    }
+  ]
 }, {
   timestamps: true
 });

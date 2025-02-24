@@ -14,16 +14,17 @@ const codeLimiter = rateLimit;
 
 // Route Handlers
 const generateCode = catchAsync(async (req, res) => {
-    const { prompt, language, context } = req.body;
-    console.log(prompt);
+    const { prompt, language,projectId, context } = req.body;
+    console.log("project id",projectId);
     logger.info(prompt);
     const result = await codeService.generateCode({
         prompt,
         language,
-        context,
-        userId: req.user._id
+        projectId,
+        userId: req.user._id,
+        context
     });
-    console.log("Generated Code:", generatedCode);
+    console.log("Generated Code:", result);
 
     res.json({
         status: 'success',
