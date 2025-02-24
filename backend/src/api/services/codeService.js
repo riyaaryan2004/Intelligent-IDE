@@ -64,14 +64,14 @@ class CodeService {
 
     async saveCodeSnippet(params) {
         const { name, code, language, projectId, userId } = params;
-
+         console.log("save code in code service");
         try {
             // Verify project exists and user has access
             const project = await Project.findOne({ _id: projectId, owner: userId });
             if (!project) {
                 throw new APIError('Project not found or access denied', 404);
             }
-
+            console.log("project found");
             // Create new code snippet
             const snippet = await CodeSnippet.create({
                 name,
@@ -85,7 +85,7 @@ class CodeService {
                     timestamp: new Date()
                 }]
             });
-
+            console.log("snippet created");
             // Update project
             await Project.findByIdAndUpdate(projectId, {
                 $push: { codeSnippets: snippet._id }
@@ -184,6 +184,18 @@ class CodeService {
             throw new APIError('Failed to optimize code', 500);
         }
     }
+    async getSnippetById(snippetId) {
+        try {
+            const snippet = await CodeSnippet.findById(snippetId);
+            if (!snippet) {
+                throw new APIError("Snippet not found", 404);
+            }
+            return snippet;
+        } catch (error) {
+            throw error;
+        }
+    }
+    
 }
 
 module.exports = new CodeService();

@@ -56,6 +56,8 @@ const optimizeCode = catchAsync(async (req, res) => {
 });
 
 const saveCodeSnippet = catchAsync(async (req, res) => {
+
+    console.log("in savecodeSnippet");
     const { name, code, language, projectId } = req.body;
     const snippet = await codeService.saveCodeSnippet({
         name,
@@ -64,6 +66,8 @@ const saveCodeSnippet = catchAsync(async (req, res) => {
         projectId,
         userId: req.user._id
     });
+    console.log("saved");
+
     res.json({
         status: 'success',
         data: { snippet }
