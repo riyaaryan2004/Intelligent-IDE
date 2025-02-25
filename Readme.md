@@ -241,7 +241,6 @@ frontend/
 | NODE_ENV | Environment mode (development/production) |
 | MONGODB_URI | MongoDB connection string |
 | JWT_SECRET | Secret for JWT token generation |
-| JWT_EXPIRES_IN | JWT token expiration time |
 | GEMINI_API_KEY | Google Gemini API key |
 | FRONTEND_URL | Frontend application URL for CORS |
 
@@ -249,13 +248,12 @@ frontend/
 
 | Variable | Description |
 |----------|-------------|
-| VITE_API_URL | Backend API base URL |
+| NEXT_PUBLIC_BACKEND_URL | Backend API base URL |
 
 ## 📚 Documentation
 
-- [API Documentation](docs/api.md)
-- [User Guide](docs/user-guide.md)
-- [Contributing Guidelines](CONTRIBUTING.md)
+- [Google gemini API Documentation](https://ai.google.dev/gemini-api/docs)
+- [Judge0 API Document](https://ce.judge0.com/)
 
 ## 🤝 Contributing
 
@@ -265,15 +263,3 @@ frontend/
 4. Run tests
 5. Submit a pull request
 
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 💬 Support
-
-For support or questions, please open an issue or contact the maintainers.
-
-## 🙏 Acknowledgments
-
-- [Google Generative AI](https://ai.google/) for providing the Gemini API
-- All open-source libraries and contributors
