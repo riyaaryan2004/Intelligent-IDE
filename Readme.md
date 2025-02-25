@@ -118,13 +118,13 @@ backend/
 ├── src/
 │   ├── api/
 │   │   ├── config/        # Configuration files
-│   │   ├── controllers/   # Request handlers
 │   │   ├── middleware/    # Express middleware
-│   │   ├── models/        # Mongoose models
 │   │   ├── routes/        # API routes
-│   │   └── services/      # Business logic
-│   ├── utils/             # Utility functions
-│   └── app.js             # Express app setup
+│   │   └── services/        
+│   │          
+│   ├── models/            # Mongoose models
+│   └── utils/             # Utility functions
+│   
 ├── logs/                  # Application logs
 ├── .env                   # Environment variables
 └── server.js              # Entry point
@@ -134,18 +134,20 @@ backend/
 
 ```
 frontend/
-├── src/
-│   ├── app/              # Application core
-│   ├── components/       # Reusable UI components
-│   ├── features/         # Feature-specific code
-│   ├── hooks/            # Custom React hooks
-│   ├── lib/              # Utilities and helpers
-│   ├── services/         # API services
-│   ├── store/            # State management
-│   ├── styles/           # Global styles
-│   └── types/            # TypeScript types
-├── public/               # Static assets
-└── index.html            # HTML template
+├── app/                  # Application core
+      ├── dashboard/      
+      ├── ide/
+      ├── signup/         
+├── hooks/                # Custom React hooks
+├── lib/   
+│                
+├── components/           # Reusable UI components       
+│           
+│              
+├── styles/              # Global styles
+│              
+├── public/          # Static assets
+└── .env             # Environment variables
 ```
 
 ## 🔌 API Endpoints
