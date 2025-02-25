@@ -66,20 +66,20 @@ npm install
 3. Create a `.env` file in the backend directory with the following variables:
 
 ```
-PORT=3000
+PORT=5000
 NODE_ENV=development
-MONGODB_URI=mongodb://localhost:27017/intelligent-ide
+MONGODB_URI=your_mongodb_credentials
 JWT_SECRET=your_jwt_secret_key
-JWT_EXPIRES_IN=30d
 GEMINI_API_KEY=your_gemini_api_key
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=http://localhost:3000
 ```
 
 4. Start the backend server:
 
 ```bash
-npm run dev
+npm start
 ```
+Note: For MacOS PORT 5000 is preoccupied by "AirDrop & Handoff" , please it off before using port 5000
 
 ### Frontend Setup
 
