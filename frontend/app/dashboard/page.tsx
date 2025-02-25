@@ -213,14 +213,14 @@ const Dashboard = () => {
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
               <Input
                 type="text"
-                placeholder="Search projects..."
+                placeholder="Search Files..."
                 className="pl-10 w-64"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <Button onClick={() => setIsNewProjectModalOpen(true)}>
-              Create Project
+              Create File
             </Button>
           </div>
         </header>
@@ -296,7 +296,7 @@ const Dashboard = () => {
       {isNewProjectModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full p-6">
-            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Create New Project</h2>
+            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Create New File</h2>
             <form onSubmit={handleCreateProject} className="space-y-4">
               <div>
                 <Label htmlFor="name">Project Name</Label>
@@ -305,7 +305,7 @@ const Dashboard = () => {
                   type="text"
                   value={newProject.name}
                   onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
-                  placeholder="My Project"
+                  placeholder="My File"
                   required
                 />
               </div>
@@ -317,7 +317,7 @@ const Dashboard = () => {
                   type="text"
                   value={newProject.description}
                   onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
-                  placeholder="Project description"
+                  placeholder="File description"
                   required
                 />
               </div>
@@ -331,12 +331,9 @@ const Dashboard = () => {
                   onChange={(e) => setNewProject({ ...newProject, language: e.target.value })}
                 >
                   <option value="javascript">JavaScript</option>
-                  <option value="typescript">TypeScript</option>
                   <option value="python">Python</option>
                   <option value="java">Java</option>
                   <option value="cpp">C++</option>
-                  <option value="html">HTML</option>
-                  <option value="css">CSS</option>
                 </select>
               </div>
 
@@ -348,7 +345,7 @@ const Dashboard = () => {
                 >
                   Cancel
                 </Button>
-                <Button type="submit">Create Project</Button>
+                <Button type="submit">Create File</Button>
               </div>
             </form>
           </div>
