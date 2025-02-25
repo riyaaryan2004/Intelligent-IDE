@@ -11,7 +11,6 @@ An AI-powered development environment that integrates cutting-edge language mode
 - 🛠️ **Code Optimization** - Automatically optimize code for better performance
 - 🐞 **Debugging** - Identify and fix bugs in your code
 - 🧪 **Testing** - Generate and run tests for your code
-- 🔄 **CI/CD Integration** - Build and deploy your code with continuous integration
 
 ## 🔧 Tech Stack
 
@@ -19,8 +18,7 @@ An AI-powered development environment that integrates cutting-edge language mode
 - ⚛️ **React** - UI library
 - 📱 **Next.js** - React framework for server-side rendering
 - 🎨 **Tailwind CSS** - Utility-first CSS framework
-- 📊 **Recharts** - Charting library for data visualization
-- 📝 **Monaco Editor** - Code editor (same as VS Code)
+- 📝 **Monaco Editor** - Code editor 
 - 🔌 **React Router** - Client-side routing
 
 ### Backend
