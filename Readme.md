@@ -37,6 +37,7 @@ An AI-powered development environment that integrates cutting-edge language mode
 - Node.js (v16+)
 - MongoDB (v4+)
 - Google Generative AI API Key
+- Judge0 API Key
 - Git
 
 ## 🚀 Getting Started
@@ -44,7 +45,7 @@ An AI-powered development environment that integrates cutting-edge language mode
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/intelligent-ide.git
+git clone [https://github.com/yourusername/intelligent-ide.git](https://github.com/riyaaryan2004/Intelligent-IDE.git)
 cd intelligent-ide
 ```
 
