@@ -45,7 +45,7 @@ An AI-powered development environment that integrates cutting-edge language mode
 ### Clone the Repository
 
 ```bash
-git clone [https://github.com/yourusername/intelligent-ide.git](https://github.com/riyaaryan2004/Intelligent-IDE.git)
+git clone https://github.com/riyaaryan2004/Intelligent-IDE.git
 cd intelligent-ide
 ```
 
