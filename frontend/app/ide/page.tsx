@@ -11,7 +11,7 @@ export default function IDEPage() {
   const [code, setCode] = useState("");
   const [prompt, setPrompt] = useState("");
   const [output, setOutput] = useState("");
-  const [language, setLanguage] = useState("javascript");
+  const [language, setLanguage] = useState("");
   const [editorWidth, setEditorWidth] = useState("50%");
   const [isLoading, setIsLoading] = useState(false);
   //const [token, setToken] = useState(""); // You would get this from auth
@@ -22,7 +22,7 @@ export default function IDEPage() {
   // File/project management state
 const [currentFileName, setCurrentFileName] = useState<string>("Untitled.js");
 const [projectId, setProjectId] = useState<string | null>(null);
-const [projectName, setProjectName] = useState<string | null>(null);
+//const [projectName, setProjectName] = useState<string | null>(null);
 
   const mainEditorRef = useRef(null);
   const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -31,12 +31,14 @@ const [projectName, setProjectName] = useState<string | null>(null);
   
   useEffect(() => {
     const savedData = localStorage.getItem("currentFileData");
+    console.log("Retrieved from localStorage:", savedData); // Debugging
+
     if (savedData) {
       const projectData = JSON.parse(savedData);
       setProjectId(projectData.fileId);
-      setProjectName(projectData.fileName);
+      setCurrentFileName(projectData.fileName);
       setLanguage(projectData.language);
-      setCode(projectData.codeSnippets.join("\n")); // Load saved code snippets
+      setCode(projectData.latestCode); 
     }
   }, []);
   
@@ -63,44 +65,43 @@ const [projectName, setProjectName] = useState<string | null>(null);
     setOutput("Running code...");
     setShowCodeCard(false);
 
-    if (language === "javascript") {
-      try {
-        // Run JavaScript locally
-        const result = eval(code);
-        setOutput(String(result));
-      } catch (error) {
-        setOutput(
-          "Error: " + (error instanceof Error ? error.message : "Unknown error")
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
-      try {
-        // Use Judge0 for other languages
-        const response = await fetch(
-          "https://api.judge0.com/submissions/?base64_encoded=false&wait=true",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              source_code: code,
-              language_id:
-                language === "cpp" ? 54 : language === "python" ? 71 : 62,
-              stdin: "",
-            }),
-          }
-        );
-        const result = await response.json();
-        setOutput(result.stdout || result.stderr || "No output");
-      } catch (error) {
-        handleError(error);
-      } finally {
-        setIsLoading(false);
-      }
+    try {
+      const url =
+        "https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true";
+      const options = {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-rapidapi-key":
+            "bbbfed5fb3mshbc59fa3b01a2246p15e921jsn6eaebf2fc9bc", // Replace with your actual API key
+          "x-rapidapi-host": "judge0-ce.p.rapidapi.com",
+        },
+        body: JSON.stringify({
+          source_code: code,
+          language_id:
+            language === "cpp" ? 54 : language === "python" ? 71 : 62,
+          stdin: 5,
+        }),
+      };
+
+      const response = await fetch(url, options);
+
+      if (!response.ok)
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+
+      const result = await response.json();
+      setOutput(result.stdout || result.stderr || "No output");
+    } catch (error) {
+      setOutput(
+        `Execution error: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
-
+  
   const handleGenerateCode = async () => {
     if (!prompt) {
       setOutput("Please enter a prompt first.");

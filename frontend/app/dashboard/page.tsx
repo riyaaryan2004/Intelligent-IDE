@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
+import { NextRouter } from "next/router";
 import Link from "next/link";
 
 // Icons
@@ -173,19 +174,45 @@ const Dashboard = () => {
       alert(`Failed to create project: ${err instanceof Error ? err.message : "An unknown error occurred"}`);
     }
   };
-  // Function to open a file in the IDE
-const handleOpenInIDE = (project: Project) => {
-  // Save the current file data to localStorage for easy retrieval in the IDE
+
+  const handleOpenInIDE =async (project: Project) => {
+
   const fileData = {
     fileId: project._id,
     fileName: project.name,
     language: project.language, // Include programming language
     lastOpened: new Date().toISOString(),
     codeSnippets: project.codeSnippets || [],
-    testCases: project.testCases || []
+    latestCode:""
   };
+
+  try {
+    if (project.codeSnippets && project.codeSnippets.length > 0) {
+      const lastSnippetId = project.codeSnippets[project.codeSnippets.length - 1];
+            const response = await fetch(`${backendURL}/api/code/snippet/${lastSnippetId}`, {
+        headers: getHeaders()
+      });
+      
+      if (response.ok) {
+        const res = await response.json();
+        // Add latest code to the fileData
+        if (res && res.data && res.data.snippet &&res.data.snippet.code) {
+          fileData.latestCode = res.data.snippet.code;
+        }
+        console.log("code: ",res.data.snippet.code);
+      } else {
+        console.error("Failed to fetch latest code snippet");
+        fileData.latestCode="//failed to fetch older code";
+      }
+    }
+    console.log("Saved to localStorage:", fileData);
+
+  } catch (error) {
+    console.error("Error fetching latest code snippet:", error);
+    // Continue with navigation even if fetch fails
+  }
   
-  // Store the file data
+
   localStorage.setItem('currentFileData', JSON.stringify(fileData));
   
   // Navigate to the IDE page with query parameters for the specific file
