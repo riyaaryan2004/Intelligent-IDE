@@ -221,10 +221,10 @@ frontend/
 
 ## 📷 Screenshots
 
-![IDE Interface](https://via.placeholder.com/800x450?text=IDE+Interface)
+![IDE Interface](https://github.com/riyaaryan2004/Intelligent-IDE/blob/main/Photos/IDE_Structure.png)
 *Main IDE interface with code editor and output panel*
 
-![Code Generation](https://via.placeholder.com/800x450?text=Code+Generation)
+![Code Generation](https://github.com/riyaaryan2004/Intelligent-IDE/blob/main/Photos/ai_generated_code.png)
 *Using AI to generate code from natural language prompts*
 
 ![Code Analysis](https://via.placeholder.com/800x450?text=Code+Analysis)
