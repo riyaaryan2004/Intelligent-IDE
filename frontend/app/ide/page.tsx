@@ -1,6 +1,6 @@
 //app/ide/page.tsx
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef,useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import { Resizable } from "re-resizable";
 import "react-resizable/css/styles.css";
@@ -12,15 +12,31 @@ export default function IDEPage() {
   const [language, setLanguage] = useState("javascript");
   const [editorWidth, setEditorWidth] = useState("50%");
   const [isLoading, setIsLoading] = useState(false);
-  const [token, setToken] = useState(""); // You would get this from auth
+  //const [token, setToken] = useState(""); // You would get this from auth
   const [generatedCode, setGeneratedCode] = useState("");
   const [showCodeCard, setShowCodeCard] = useState(false);
   const [cardZoom, setCardZoom] = useState(1);
   
+  // File/project management state
+const [currentFileName, setCurrentFileName] = useState<string>("Untitled.js");
+const [projectId, setProjectId] = useState<string | null>(null);
+const [projectName, setProjectName] = useState<string | null>(null);
+
   const mainEditorRef = useRef(null);
   const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL;
   const token1 = localStorage.getItem("authToken");
-  //console.log("hii",token1);
+  console.log("hii",token1);
+  
+  useEffect(() => {
+    const savedData = localStorage.getItem("currentFileData");
+    if (savedData) {
+      const projectData = JSON.parse(savedData);
+      setProjectId(projectData.fileId);
+      setProjectName(projectData.fileName);
+      setLanguage(projectData.language);
+      setCode(projectData.codeSnippets.join("\n")); // Load saved code snippets
+    }
+  }, []);
   
   // Headers for API requests
   const getHeaders = () => {
@@ -37,6 +53,15 @@ export default function IDEPage() {
     setIsLoading(false);
   };
 
+  const handleViewAllFiles = () => {
+    // Redirect to the dashboard page with the project ID as a query parameter
+    if (projectId) {
+      window.location.href = `/dashboard?projectId=${projectId}`;
+    } else {
+      // If no project ID is available, just go to the dashboard
+      window.location.href = "/dashboard";
+    }
+  };
   const handleRunCode = async () => {
     setIsLoading(true);
     setOutput("Running code...");
@@ -97,7 +122,8 @@ export default function IDEPage() {
         body: JSON.stringify({
           prompt,
           language,
-          context: {}
+          projectId, 
+          context: "None"
         }),
       });
 
@@ -107,11 +133,14 @@ export default function IDEPage() {
 
       const data = await response.json();
       
-      if (data.status === "success" && data.data) {
-        const codeResult = data.data.snippet?.code || data.data.result?.code || "";
-        setGeneratedCode(codeResult);
-        setOutput(`Code generated successfully! Check the code card below.`);
-        setShowCodeCard(true);
+      if (data.status === "success" && data.data?.snippet) {
+        const codeResult = data.data.snippet.code || "";
+      setGeneratedCode(codeResult);
+      const analysisData = data.data.snippet.analysis || data.data.analysis || {};
+      const testsData = data.data.tests || {};
+      
+      setOutput(`Code generated successfully! Check the code card below.`);
+      setShowCodeCard(true);
       } else {
         setOutput(`Error: ${data.message || "Failed to generate code"}`);
       }
@@ -137,7 +166,7 @@ export default function IDEPage() {
     setShowCodeCard(false);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/code/analyze`, {
+      const response = await fetch(`${backendURL}/code/analyze`, {
         method: "POST",
         headers: getHeaders(),
         body: JSON.stringify({
@@ -210,7 +239,7 @@ export default function IDEPage() {
     setShowCodeCard(false);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/code/optimize`, {
+      const response = await fetch(`${backendURL}/code/optimize`, {
         method: "POST",
         headers: getHeaders(),
         body: JSON.stringify({
@@ -278,7 +307,7 @@ export default function IDEPage() {
     setShowCodeCard(false);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/debug/analyze`, {
+      const response = await fetch(`${backendURL}/debug/analyze`, {
         method: "POST",
         headers: getHeaders(),
         body: JSON.stringify({
@@ -373,6 +402,32 @@ export default function IDEPage() {
           setEditorWidth(ref.style.width)
         }
       >
+        <div className="flex items-center justify-between gap-2">
+        {/* File info display */}
+        <div className="flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+          </svg>
+          <span className="font-medium text-sm truncate max-w-[200px]">
+            {currentFileName || "Untitled"}
+          </span>
+          <span className="text-xs text-gray-500">{projectId ? `(Project: ${projectId.slice(0, 8)}...)` : ""}</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            //onClick={handleSaveFile}
+            className="bg-gray-600 text-white px-3 py-1 rounded-md flex items-center text-sm"
+            title="Save"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z" />
+            </svg>
+            Save
+          </button>
+        </div>
+      </div>
+
         <div className="flex items-center gap-9">
           <div>
             <label className="font-bold ">Language: </label>
@@ -389,6 +444,16 @@ export default function IDEPage() {
           </div>
           <div className="">
             <div className="flex items-center gap-3">
+            <button
+            onClick={handleViewAllFiles}
+            className="bg-gray-600 text-white px-3 py-2 rounded-md flex items-center"
+            title="View All Files"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+            </svg>
+            Files
+            </button>
               <button
                 onClick={handleRunCode}
                 className="bg-green-600 text-white px-4 py-2 rounded-md flex items-center"

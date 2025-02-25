@@ -4,13 +4,13 @@ const router = express.Router();
 const codeService = require('../services/codeService');
 const { auth, authRole } = require('../middleware/auth');
 const { catchAsync } = require('../middleware/errorHandler');
-const rateLimit = require('../middleware/rateLimiter');
+//const rateLimit = require('../middleware/rateLimiter');
 const validation = require('../middleware/validation');
 const cache = require('../middleware/cache');
 const logger = require('../../utils/logger');
 
 // Create rate limiter instance
-const codeLimiter = rateLimit;
+//const codeLimiter = rateLimit;
 
 // Route Handlers
 const generateCode = catchAsync(async (req, res) => {

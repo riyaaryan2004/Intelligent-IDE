@@ -138,25 +138,47 @@ class GeminiService {
             console.error("🚨 Invalid analysis provided to parseAnalysis:", analysis);
             return { improvements: [], bugs: [], securityIssues: [], recommendations: [] };
         }
-        try {
-            // 🚀 Remove backticks and trim whitespace
-            const cleanText = analysis.replace(/```json|```/g, "").trim();
-            
-            console.log("📌 Cleaned Response Text:", cleanText);
-            const parsedData = JSON.parse(cleanText);
-            console.log("✅ Parsed JSON:", parsedData);
     
-            return {
-                improvements: parsedData.improvements || [],
-                bugs: parsedData.bugs || [],
-                securityIssues: parsedData.securityIssues || [],
-                recommendations: parsedData.recommendations || []
-            };
-        } catch (error) {
-            console.error("🚨 JSON Parse Error:", error);
+        try {
+            // 🚀 Clean response text (Remove Markdown, JSON prefix, extra spaces)
+            let cleanText = analysis
+                .replace(/```(json)?/gi, "")  // Remove Markdown code blocks
+                .replace(/^\s*JSON\s*:/i, "") // Remove "JSON:" prefix (case insensitive)
+                .replace(/^\s*JSON\s*/i, "")  // Remove unexpected "JSON" at the start
+                .trim();
+    
+            console.log("📌 Cleaned Response Text:", cleanText);
+    
+            // 🔄 Attempt JSON parsing
+            try {
+                return this.extractAnalysis(JSON.parse(cleanText));
+            } catch (error) {
+                console.warn("⚠ Initial JSON parse failed, attempting auto-recovery...");
+    
+                // 🛠 Auto-recover by fixing common JSON issues
+                cleanText = cleanText
+                    .replace(/,\s*}/g, "}")   // Remove trailing commas before closing braces
+                    .replace(/,\s*]/g, "]")   // Remove trailing commas before closing brackets
+                    .replace(/“|”/g, '"')     // Convert fancy quotes to standard quotes
+                    .replace(/‘|’/g, "'")     // Convert fancy single quotes
+                    .replace(/([{,])\s*([\w-]+)\s*:/g, '$1"$2":') // Ensure keys are properly quoted
+                    .trim();
+    
+                return this.extractAnalysis(JSON.parse(cleanText));
+            }
+        } catch (finalError) {
+            console.error("🚨 Failed to parse AI response as JSON:", finalError);
             console.error("🚨 Raw Response (Before Cleanup):", analysis);
-            throw new Error("Invalid JSON received from GeminiService");
+            return { improvements: [], bugs: [], securityIssues: [], recommendations: [] };
         }
+    }
+    extractAnalysis(parsedData) {
+        return {
+            improvements: parsedData.improvements?.map(item => item.description) || [],
+            bugs: parsedData.bugs?.map(item => item.description) || [],
+            securityIssues: parsedData.securityIssues?.map(item => item.vulnerability) || [],
+            recommendations: parsedData.recommendations || []
+        };
     }
 
     extractTestsFromResponse(response) {

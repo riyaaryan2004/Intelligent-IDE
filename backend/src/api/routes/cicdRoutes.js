@@ -4,7 +4,7 @@ const router = express.Router();
 const cicdService = require('../services/cicdService');
 const { auth, authRole } = require('../middleware/auth');
 const { catchAsync } = require('../middleware/errorHandler');
-const { rateLimit } = require('../middleware/rateLimiter');
+//const { rateLimit } = require('../middleware/rateLimiter');
 const validation = require('../middleware/validation');
 const cache = require('../middleware/cache');
 

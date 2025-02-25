@@ -9,29 +9,36 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 // Icons
-import { Cpu,Trash2,Lock, Eye, User, FileCode, Folder, ExternalLink, Code, Search } from "lucide-react";
+import { Cpu, Trash2, Lock, Eye, User, FileCode, Folder, ExternalLink, Code, Search } from "lucide-react";
 
 // Types
 interface User {
-  name: string;
-  email?: string;
-}
-
-interface FileItem {
   _id: string;
-  name: string;
-  language: string;
-  createdAt: string;
+  username: string;
+  email: string;
 }
 
+interface Collaborator {
+  user: User;
+  role: string;
+  _id: string;
+}
+  
 interface Project {
   _id: string;
   name: string;
   description: string;
+  owner: User;
   language: string;
-  files: FileItem[];
+  codeSnippets: any[]; // Modify based on actual structure
+  testCases: any[]; // Modify based on actual structure
+  settings: Record<string, any>; // Replace 'any' if settings have a fixed structure
+  collaborators: Collaborator[];
+  createdAt: string; // Consider converting to Date type if needed
   updatedAt: string;
+  __v: number;
 }
+
 
 const Dashboard = () => {
   const router = useRouter();
@@ -48,7 +55,6 @@ const Dashboard = () => {
   });
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState<boolean>(false);
 
-  // API Base URL
   const backendURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
   // Function to get headers with auth token
@@ -62,7 +68,7 @@ const Dashboard = () => {
 
   // Get language icon
   const getLanguageIcon = (language: string) => {
-    switch(language?.toLowerCase()) {
+    switch (language?.toLowerCase()) {
       case "javascript":
         return "📄 JS";
       case "typescript":
@@ -112,20 +118,9 @@ const Dashboard = () => {
         const projectsResponse = await fetch(`${backendURL}/api/projects`, { headers: getHeaders() });
         if (!projectsResponse.ok) throw new Error("Failed to fetch projects");
         const projectsData = await projectsResponse.json();
-        
-        // Add dummy files data for now - replace with actual API endpoint when available
-        const projectsWithFiles = Array.isArray(projectsData.data?.projects.projects) 
-          ? projectsData.data.projects.projects.map((project: Project) => ({
-              ...project,
-              files: project.files || [
-                { _id: `file1_${project._id}`, name: "index.js", language: "javascript", createdAt: project.updatedAt },
-                { _id: `file2_${project._id}`, name: "styles.css", language: "css", createdAt: project.updatedAt },
-                { _id: `file3_${project._id}`, name: "app.py", language: "python", createdAt: project.updatedAt },
-              ]
-            }))
-          : [];
-        
-        setProjects(projectsWithFiles);
+        const projectsList = projectsData?.data?.projects?.projects || [];
+        setProjects(projectsList);
+    
       } catch (err) {
         console.error("Error fetching data:", err);
         setError(err instanceof Error ? err.message : "An unknown error occurred");
@@ -160,7 +155,7 @@ const Dashboard = () => {
       const data = await response.json();
       const project = data.data?.project;
       if (project && project._id && project.name) {
-        setProjects([{...project, files: []}, ...projects]);
+        setProjects([{ ...project, files: [] }, ...projects]);
       }
       setIsNewProjectModalOpen(false);
       setNewProject({ name: "", description: "", language: "javascript" });
@@ -169,6 +164,24 @@ const Dashboard = () => {
       alert(`Failed to create project: ${err instanceof Error ? err.message : "An unknown error occurred"}`);
     }
   };
+  // Function to open a file in the IDE
+const handleOpenInIDE = (project: Project) => {
+  // Save the current file data to localStorage for easy retrieval in the IDE
+  const fileData = {
+    fileId: project._id,
+    fileName: project.name,
+    language: project.language, // Include programming language
+    lastOpened: new Date().toISOString(),
+    codeSnippets: project.codeSnippets || [],
+    testCases: project.testCases || []
+  };
+  
+  // Store the file data
+  localStorage.setItem('currentFileData', JSON.stringify(fileData));
+  
+  // Navigate to the IDE page with query parameters for the specific file
+  router.push(`/ide?projectId=${project._id}&fileName=${encodeURIComponent(project.name)}`);
+};
 
   // Delete project
   const handleDeleteProject = async (id: string) => {
@@ -195,7 +208,7 @@ const Dashboard = () => {
   };
 
   // Filter projects based on search query
-  const filteredProjects = projects.filter((project) => 
+  const filteredProjects = projects.filter((project) =>
     project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     project.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -206,7 +219,7 @@ const Dashboard = () => {
         <header className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-            {user && <p className="text-gray-600 dark:text-gray-400">Welcome, {user.name}!</p>}
+            {user && <p className="text-gray-600 dark:text-gray-400">Welcome, {user.username}!</p>}
           </div>
           <div className="flex items-center space-x-4">
             <div className="relative">
@@ -241,7 +254,7 @@ const Dashboard = () => {
           {/* Project List */}
           <div className="md:col-span-1 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
             <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Your Files</h2>
-            
+
             {filteredProjects.length === 0 ? (
               <div className="text-center py-8">
                 <Folder className="h-12 w-12 mx-auto text-gray-400" />
@@ -252,13 +265,12 @@ const Dashboard = () => {
             ) : (
               <ul className="space-y-2">
                 {filteredProjects.map((project) => (
-                  <li 
-                    key={project._id} 
-                    className={`p-3 rounded-md cursor-pointer flex justify-between items-center ${
-                      selectedProject?._id === project._id 
-                        ? "bg-blue-100 dark:bg-blue-900/30 border-l-4 border-blue-500" 
+                  <li
+                    key={project._id}
+                    className={`p-3 rounded-md cursor-pointer flex justify-between items-center ${selectedProject?._id === project._id
+                        ? "bg-blue-100 dark:bg-blue-900/30 border-l-4 border-blue-500"
                         : "hover:bg-gray-100 dark:hover:bg-gray-700"
-                    }`}
+                      }`}
                     onClick={() => setSelectedProject(project)}
                   >
                     <div className="flex items-center">
@@ -272,23 +284,38 @@ const Dashboard = () => {
                         </p>
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteProject(project._id);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenInIDE(project);
+                        }}
+                        title="Open in IDE"
+                      >
+                        <Code className="h-4 w-4 text-blue-500" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteProject(project._id);
+                        }}
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
                   </li>
                 ))}
               </ul>
             )}
           </div>
 
-  
+
         </div>
       </div>
 
