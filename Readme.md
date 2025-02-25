@@ -92,13 +92,13 @@ cd ../frontend
 2. Install dependencies:
 
 ```bash
-npm install
+npm install or npm install --force
 ```
 
 3. Create a `.env` file in the frontend directory:
 
 ```
-VITE_API_URL=http://localhost:3000/api
+NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
 ```
 
 4. Start the frontend development server:
@@ -107,7 +107,7 @@ VITE_API_URL=http://localhost:3000/api
 npm run dev
 ```
 
-5. Open your browser and visit `http://localhost:5173`
+5. Open your browser and visit `http://localhost:3000`
 
 ## 🗂️ Project Structure
 
