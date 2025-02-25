@@ -2,6 +2,7 @@
 "use client";
 import { useState, useRef,useEffect } from "react";
 import Editor from "@monaco-editor/react";
+import { editor } from "monaco-editor"; // Import Monaco types
 import { Resizable } from "re-resizable";
 import "react-resizable/css/styles.css";
 import { useRouter } from "next/navigation";
@@ -14,17 +15,17 @@ export default function IDEPage() {
   const [language, setLanguage] = useState("");
   const [editorWidth, setEditorWidth] = useState("50%");
   const [isLoading, setIsLoading] = useState(false);
-  //const [token, setToken] = useState(""); // You would get this from auth
-  const [generatedCode, setGeneratedCode] = useState("");
+  const [activeTab, setActiveTab] = useState("output"); // "output" or "testcases"
+  const [testCases, setTestCases] = useState("");  const [generatedCode, setGeneratedCode] = useState("");
   const [showCodeCard, setShowCodeCard] = useState(false);
   const [cardZoom, setCardZoom] = useState(1);
   
   // File/project management state
-const [currentFileName, setCurrentFileName] = useState<string>("Untitled.js");
-const [projectId, setProjectId] = useState<string | null>(null);
-//const [projectName, setProjectName] = useState<string | null>(null);
+  const [currentFileName, setCurrentFileName] = useState<string>("Untitled.js");
+  const [projectId, setProjectId] = useState<string | null>(null);
+ 
+  const mainEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
 
-  const mainEditorRef = useRef(null);
   const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL;
   const token1 = localStorage.getItem("authToken");
   console.log("hii",token1);
@@ -39,6 +40,12 @@ const [projectId, setProjectId] = useState<string | null>(null);
       setCurrentFileName(projectData.fileName);
       setLanguage(projectData.language);
       setCode(projectData.latestCode); 
+
+      if (projectData.testCases) {
+        setTestCases(Array.isArray(projectData.testCases) 
+          ? projectData.testCases.join("\n") 
+          : projectData.testCases);
+      }
     }
   }, []);
   
@@ -60,6 +67,35 @@ const [projectId, setProjectId] = useState<string | null>(null);
   const handleViewAllFiles = () => {
       router.push("/dashboard");
   };
+ 
+// Add this function to handle test case changes
+const handleTestCasesChange = (value: string | undefined) => {
+  setTestCases(value || "");
+  // Save test cases in localStorage
+  const savedData = localStorage.getItem("currentFileData");
+  if (savedData && projectId) {
+    const projectData = JSON.parse(savedData);
+    projectData.testCases = value || "";
+    localStorage.setItem("currentFileData", JSON.stringify(projectData));
+  }
+
+};
+
+const handleRunTests = () => {
+  if (!testCases || !code) {
+    setOutput("Please add both code and test cases to run tests.");
+    setActiveTab("output");
+    return;
+  }
+
+  setIsLoading(true);
+  setOutput("Running tests...");
+  setActiveTab("output");
+
+  setTimeout(() => {
+    setIsLoading(false);
+  }, 2000);
+};
   const handleRunCode = async () => {
     setIsLoading(true);
     setOutput("Running code...");
@@ -79,8 +115,12 @@ const [projectId, setProjectId] = useState<string | null>(null);
         body: JSON.stringify({
           source_code: code,
           language_id:
-            language === "cpp" ? 54 : language === "python" ? 71 : 62,
-          stdin: 5,
+                language === "cpp" ? 54  
+              : language === "python" ? 71  
+              : language === "java" ? 62  
+              : language === "javascript" ? 63  
+              : null ,
+          stdin: testCases, //take input from run test case
         }),
       };
 
@@ -328,7 +368,7 @@ const [projectId, setProjectId] = useState<string | null>(null);
           formattedOutput += "Potential Bugs:\n";
           Object.entries(analysis.potentialBugs).forEach(([category, bugs]) => {
             formattedOutput += `${category}:\n`;
-            bugs.forEach((bug: any, i: any) => {
+            (bugs as string[]).forEach((bug: any, i: any) => {
               formattedOutput += `- ${bug}\n`;
             });
             formattedOutput += "\n";
@@ -530,86 +570,150 @@ const [projectId, setProjectId] = useState<string | null>(null);
         maxWidth="70%"
         enable={{ left: true }}
       >
-        <h2 className="text-xl font-bold mb-2 text-white">Output</h2>
-        <pre className="overflow-auto flex-grow bg-zinc-900 text-white p-4 rounded-md whitespace-pre-wrap">
-          {isLoading ? "Loading..." : output || "No output yet"}
-        </pre>
-        
-        {showCodeCard && (
-          <div className="mt-4">
-            <div 
-              className="bg-zinc-700 rounded-md p-3 border border-zinc-600 transition-all"
-              style={{ transform: `scale(${cardZoom})`, transformOrigin: 'top left' }}
-            >
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="text-white font-bold">Generated Code</h3>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={handleZoomOut} 
-                    className="bg-zinc-600 text-white px-2 py-1 rounded hover:bg-zinc-500"
-                    title="Zoom Out"
-                  >
-                    −
-                  </button>
-                  <button 
-                    onClick={handleZoomReset} 
-                    className="bg-zinc-600 text-white px-2 py-1 rounded hover:bg-zinc-500"
-                    title="Reset Zoom"
-                  >
-                    ↺
-                  </button>
-                  <button 
-                    onClick={handleZoomIn} 
-                    className="bg-zinc-600 text-white px-2 py-1 rounded hover:bg-zinc-500"
-                    title="Zoom In"
-                  >
-                    +
-                  </button>
+        {/* Tab navigation */}
+        <div className="flex border-b border-zinc-700 mb-2  gap-5">
+          <button
+            className={`py-2 px-4 font-medium text-sm ${
+              activeTab === "output"
+                ? "text-white border-b-2 border-blue-500"
+                : "text-gray-400 hover:text-white"
+            }`}
+            onClick={() => setActiveTab("output")}
+          >
+            Output
+          </button>
+          <button
+            className={`py-2 px-4 font-medium text-sm ${
+              activeTab === "testcases"
+                ? "text-white border-b-2 border-blue-500"
+                : "text-gray-400 hover:text-white"
+            }`}
+            onClick={() => setActiveTab("testcases")}
+          >
+            Test Cases
+          </button>
+        </div>
+
+        {/* Conditional rendering based on active tab */}
+        {activeTab === "output" ? (
+          <>
+            <h2 className="text-xl font-bold mb-2 text-white">Output</h2>
+            <pre className="overflow-auto flex-grow bg-zinc-900 text-white p-4 rounded-md whitespace-pre-wrap">
+              {isLoading ? "Loading..." : output || "No output yet"}
+            </pre>
+            
+            {showCodeCard && (
+              <div className="mt-4">
+                <div 
+                  className="bg-zinc-700 rounded-md p-3 border border-zinc-600 transition-all"
+                  style={{ transform: `scale(${cardZoom})`, transformOrigin: 'top left' }}
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-white font-bold">Generated Code</h3>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={handleZoomOut} 
+                        className="bg-zinc-600 text-white px-2 py-1 rounded hover:bg-zinc-500"
+                        title="Zoom Out"
+                      >
+                        −
+                      </button>
+                      <button 
+                        onClick={handleZoomReset} 
+                        className="bg-zinc-600 text-white px-2 py-1 rounded hover:bg-zinc-500"
+                        title="Reset Zoom"
+                      >
+                        ↺
+                      </button>
+                      <button 
+                        onClick={handleZoomIn} 
+                        className="bg-zinc-600 text-white px-2 py-1 rounded hover:bg-zinc-500"
+                        title="Zoom In"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="h-80 mb-2">
+                    <Editor
+                      height="100%"
+                      language={language}
+                      theme="vs-dark"
+                      value={generatedCode}
+                      onChange={(value) => setGeneratedCode(value || "")}
+                      options={{
+                        minimap: { enabled: false },
+                        fontSize: 14,
+                        wordWrap: 'on',
+                        readOnly: false,
+                        automaticLayout: true
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={handleMergeCode}
+                      className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 flex items-center gap-1"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm9 4a1 1 0 10-2 0v6a1 1 0 102 0V7zm-3 2a1 1 0 10-2 0v4a1 1 0 102 0V9zm-3 3a1 1 0 10-2 0v1a1 1 0 102 0v-1z" clipRule="evenodd" />
+                      </svg>
+                      Merge
+                    </button>
+                    <button
+                      onClick={handleReplaceCode}
+                      className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 flex items-center gap-1"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0
+                        11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 
+                        011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 
+                        1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                      </svg>
+                      Replace
+                    </button>
+                  </div>
                 </div>
               </div>
-              
-              <div className="h-80 mb-2">
-                <Editor
-                  height="100%"
-                  language={language}
-                  theme="vs-dark"
-                  value={generatedCode}
-                  onChange={setGeneratedCode}
-                  options={{
-                    minimap: { enabled: false },
-                    fontSize: 14,
-                    wordWrap: 'on',
-                    readOnly: false,
-                    automaticLayout: true
-                  }}
-                />
-              </div>
-              
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={handleMergeCode}
-                  className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 flex items-center gap-1"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm9 4a1 1 0 10-2 0v6a1 1 0 102 0V7zm-3 2a1 1 0 10-2 0v4a1 1 0 102 0V9zm-3 3a1 1 0 10-2 0v1a1 1 0 102 0v-1z" clipRule="evenodd" />
-                  </svg>
-                  Merge
-                </button>
-                <button
-                  onClick={handleReplaceCode}
-                  className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 flex items-center gap-1"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0
-                     11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 
-                     011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 
-                     1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
-                  </svg>
-                  Replace
-                </button>
-              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-xl font-bold text-white">Test Cases</h2>
+              <button
+                onClick={handleRunCode}
+                className="bg-green-600 text-white px-3 py-1 rounded-md flex items-center text-sm"
+                disabled={isLoading}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                Run Tests
+              </button>
             </div>
-          </div>
+            <div className="flex-grow bg-zinc-900 rounded-md overflow-hidden">
+              <Editor
+                height="100%"
+                language={language}
+                theme="vs-dark"
+                value={testCases}
+                onChange={(value) => handleTestCasesChange(value || "")}
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 14,
+                  wordWrap: 'on',
+                  lineNumbers: 'on',
+                  automaticLayout: true
+                }}
+              />
+            </div>
+            <p className="text-gray-400 text-xs mt-2">
+              Write your test cases here. Each test case should be separated by a new line.
+            </p>
+          </>
         )}
       </Resizable>
     </div>
