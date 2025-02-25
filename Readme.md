@@ -192,34 +192,6 @@ frontend/
 - `PUT /api/test/case/:testId` - Update a test case
 - `DELETE /api/test/case/:testId` - Delete a test case
 
-### CI/CD
-
-- `POST /api/cicd/pipeline/init` - Initialize a pipeline
-- `GET /api/cicd/pipeline/:projectId` - Get pipeline configuration
-- `PUT /api/cicd/pipeline/:projectId` - Update pipeline configuration
-- `POST /api/cicd/build` - Trigger a build
-- `GET /api/cicd/build/:buildId` - Get build status
-- `GET /api/cicd/builds/:projectId` - Get project build history
-- `POST /api/cicd/deploy` - Deploy a version
-- `GET /api/cicd/deploy/:deploymentId` - Get deployment status
-- `GET /api/cicd/deployments/:projectId` - Get project deployment history
-- `GET /api/cicd/metrics/:projectId` - Get pipeline metrics
-
-## 🧪 Testing
-
-### Backend Tests
-
-```bash
-cd backend
-npm test
-```
-
-### Frontend Tests
-
-```bash
-cd frontend
-npm test
-```
 
 ## 🛠️ Development Workflow
 
