@@ -2,7 +2,8 @@
 
 An AI-powered development environment that integrates cutting-edge language models to assist with code generation, analysis, debugging, optimization, and testing.
 
-![Intelligent IDE Screenshot](https://via.placeholder.com/1200x600?text=Intelligent+IDE+Screenshot)
+
+![Intelligent IDE Screenshot](https://github.com/riyaaryan2004/Intelligent-IDE/blob/main/Photos/landing_page.png)
 
 ## ✨ Features
 
@@ -221,14 +222,18 @@ frontend/
 
 ## 📷 Screenshots
 
+
 ![IDE Interface](https://github.com/riyaaryan2004/Intelligent-IDE/blob/main/Photos/IDE_Structure.png)
 *Main IDE interface with code editor and output panel*
+
 
 ![Code Generation](https://github.com/riyaaryan2004/Intelligent-IDE/blob/main/Photos/ai_generated_code.png)
 *Using AI to generate code from natural language prompts*
 
+
 ![Code Analysis](https://via.placeholder.com/800x450?text=Code+Analysis)
 *Analyzing code for quality and potential improvements*
+
 
 ![Debugging](https://via.placeholder.com/800x450?text=Debugging)
 *Debugging interface with variable inspection*
