@@ -44,40 +44,30 @@ class GeminiService {
     async analyzeCode(code, language) {
         try {
             console.log("inside gemini sevice analyse code");
-            const prompt = `You are an expert code analyzer specializing in ${language} performance and security. Analyze the following ${language} code, focusing on time complexity, security vulnerabilities, and adherence to best practices. Provide your response in this structured JSON format:
+            const prompt = `You are an expert code analyzer specializing in ${language} performance and security. Analyze the following ${language} code, focusing on time complexity, security vulnerabilities, and adherence to best practices.Strictly Provide your response in this structured JSON format:
 
                 {
-                "improvements": [
-                    {
+                "improvements": [{
                     "description": "Detailed explanation of the improvement.",
                     "reason": "Why this improvement is necessary.",
                     "codeFix": "Example code fix, if applicable."
-                    }
-                ],
-                "bugs": [
-                    {
+                    }],
+                "bugs":[{
                     "description": "Description of the bug.",
                     "location": "Line number or code section.",
                     "fix": "Corrected code or explanation of the fix."
-                    }
-                ],
-                "securityIssues": [
-                    {
+                    }],
+                "securityIssues":[{
                     "vulnerability": "Type of vulnerability (e.g., SQL injection, XSS).",
                     "location": "Code section.",
                     "mitigation": "Strategies to prevent the vulnerability."
-                    }
-                ],
+                    } ],
                 "recommendations": [
                     "Best practices and coding style suggestions."
-                ]
-                }
-
-                Here is the ${language} code:
-                \`\`\`${language}
+                ]}
+             Here is the ${language} code:
+                ${language}
                 ${code}
-                \`\`\`
-
                 Prioritize critical security issues and bugs. Make sure all fields are present, even if they are empty arrays. Provide detailed explanations for each improvement, bug, and security issue. If possible provide time and space complexity analysis.
                 `;
 

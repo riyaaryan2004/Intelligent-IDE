@@ -46,7 +46,7 @@ app.use('/api/', limiter);
 
 // CORS configuration
 const corsOptions = {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
     optionsSuccessStatus: 200
 };
@@ -135,7 +135,7 @@ const startServer = async () => {
         logger.info('✅ Database connection established');
 
         // Start server
-        const PORT = process.env.PORT || 3000;
+        const PORT = process.env.PORT || 5000;
         const server = app.listen(PORT, () => {
             logger.info(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
         });

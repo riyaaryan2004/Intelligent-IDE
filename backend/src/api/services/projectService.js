@@ -78,8 +78,10 @@ class ProjectService {
                 .sort(sortOptions)
                 .skip((page - 1) * limit)
                 .limit(limit)
-                .populate('owner', 'username email')
-                .populate('collaborators.user', 'username email');
+                .populate("owner", "username email")
+                .populate("collaborators.user", "username email")
+                .lean();
+                console.log("Projects after lean():", projects);
 
             // Get total count
             const total = await Project.countDocuments(query);
@@ -106,10 +108,10 @@ class ProjectService {
                     { 'collaborators.user': userId }
                 ]
             })
-            .populate('owner', 'username email')
-            .populate('collaborators.user', 'username email')
-            .populate('codeSnippets')
-            .populate('testCases');
+                .populate('owner', 'username email')
+                .populate('collaborators.user', 'username email')
+                .populate('codeSnippets')
+                .populate('testCases');
 
             if (!project) {
                 throw new APIError('Project not found or access denied', 404);
@@ -134,12 +136,12 @@ class ProjectService {
             const userRole = project.collaborators?.find(
                 c => c?.user?._id?.toString() === userId?.toString()
             )?.role;
-            
+
             console.log("Project ID:", projectId);
             console.log("User ID:", userId);
             console.log("Collaborators:", project.collaborators);
-            
-            
+
+
             if (!['owner', 'admin'].includes(userRole)) {
                 throw new APIError('Only owners and admins can update projects', 403);
             }
@@ -158,8 +160,8 @@ class ProjectService {
                 },
                 { new: true }
             )
-            .populate('owner', 'username email')
-            .populate('collaborators.user', 'username email');
+                .populate('owner', 'username email')
+                .populate('collaborators.user', 'username email');
 
             return updatedProject;
         } catch (error) {

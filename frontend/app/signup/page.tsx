@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,21 +8,51 @@ import { Label } from "@/components/ui/label"
 import { Cpu, Lock, Mail, User } from "lucide-react"
 import { useRouter } from "next/navigation"
 
-export default function SignUp() {
+const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+export default function AuthPage() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
+  const [isLogin, setIsLogin] = useState(false) // Toggle between login and signup
   const router = useRouter()
+
+  const isStrongPassword = (password: string) => {
+    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return strongPasswordRegex.test(password);
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Here you would typically send the data to your backend
-    console.log("Signup data:", { name, email, password })
-    // Simulate a backend call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    // For now, we'll just simulate a successful signup
-    localStorage.setItem("authToken", "dummy_token")
-    router.push("/ide")
+    setError("")
+
+    if (!isLogin && !isStrongPassword(password)) {
+      setError("Password must be at least 8 characters long, include uppercase, lowercase, a number, and a special character.")
+      return
+    }
+
+    try {
+      const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
+      const body = isLogin ? { email, password } : { username: name, email, password };
+
+      const response = await fetch(`${backendURL}${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || (isLogin ? "Login failed" : "Registration failed"))
+      }
+
+      localStorage.setItem("authToken", data.data.token)
+      router.push("/ide") // Redirect after successful login/signup
+    } catch (err: any) {
+      setError(err.message)
+    }
   }
 
   return (
@@ -34,28 +63,28 @@ export default function SignUp() {
           <h1 className="text-4xl font-bold text-white">Intelligent IDE</h1>
         </div>
         <form onSubmit={handleSubmit} className="bg-gray-800 shadow-lg rounded-lg px-8 pt-6 pb-8 mb-4">
-          <h2 className="text-2xl font-bold text-white mb-6 text-center">Sign Up</h2>
-          <div className="mb-6">
-            <Label htmlFor="name" className="block text-gray-300 text-sm font-bold mb-2">
-              Name
-            </Label>
-            <div className="relative">
-              <Input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full pl-10 bg-gray-700 text-white"
-                placeholder="John Doe"
-                required
-              />
-              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+          <h2 className="text-2xl font-bold text-white mb-6 text-center">{isLogin ? "Login" : "Sign Up"}</h2>
+
+          {!isLogin && (
+            <div className="mb-6">
+              <Label htmlFor="name" className="block text-gray-300 text-sm font-bold mb-2">Name</Label>
+              <div className="relative">
+                <Input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full pl-10 bg-gray-700 text-white"
+                  placeholder="John Doe"
+                  required={!isLogin}
+                />
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+              </div>
             </div>
-          </div>
+          )}
+
           <div className="mb-6">
-            <Label htmlFor="email" className="block text-gray-300 text-sm font-bold mb-2">
-              Email
-            </Label>
+            <Label htmlFor="email" className="block text-gray-300 text-sm font-bold mb-2">Email</Label>
             <div className="relative">
               <Input
                 id="email"
@@ -69,10 +98,9 @@ export default function SignUp() {
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             </div>
           </div>
+
           <div className="mb-6">
-            <Label htmlFor="password" className="block text-gray-300 text-sm font-bold mb-2">
-              Password
-            </Label>
+            <Label htmlFor="password" className="block text-gray-300 text-sm font-bold mb-2">Password</Label>
             <div className="relative">
               <Input
                 id="password"
@@ -86,13 +114,22 @@ export default function SignUp() {
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             </div>
           </div>
-          <div className="flex items-center justify-between">
-            <Button
-              type="submit"
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-            >
-              Sign Up
+
+          {error && <p className="text-red-500 text-xs italic mb-4">{error}</p>}
+
+          <div className="flex flex-col items-center">
+            <Button type="submit" className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+              {isLogin ? "Login" : "Sign Up"}
             </Button>
+            <p className="text-gray-400 text-sm mt-4">
+              {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+              <span
+                className="text-blue-400 cursor-pointer hover:underline"
+                onClick={() => setIsLogin(!isLogin)}
+              >
+                {isLogin ? "Sign Up" : "Login"}
+              </span>
+            </p>
           </div>
         </form>
         <p className="text-center text-gray-500 text-xs">&copy;2023 Intelligent IDE. All rights reserved.</p>
@@ -100,4 +137,3 @@ export default function SignUp() {
     </div>
   )
 }
-

@@ -1,21 +1,28 @@
+//app/page.tsx
 "use client";
 
 import type React from "react";
-
 import { Button } from "@/components/ui/button";
 import { CircuitBoard, Cpu, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect ,useState } from "react";
 
 export default function Home() {
   const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  useEffect(() => {
+    const authToken = localStorage.getItem("authToken");
+    if (authToken) {
+      setIsLoggedIn(true); // Store the login state
+    }
+  }, []);
   const handleGetStarted = () => {
     // Check for authorization header (this is a simplified example)
     const isAuthorized = localStorage.getItem("authToken");
     if (isAuthorized) {
       // Redirect to IDE page
-      router.push("/ide");
+      router.push("/dashboard");
     } else {
       // Redirect to signup page
       router.push("/signup");
