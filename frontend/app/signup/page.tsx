@@ -49,7 +49,7 @@ export default function AuthPage() {
       }
 
       localStorage.setItem("authToken", data.data.token)
-      router.push("/ide") // Redirect after successful login/signup
+      router.push("/dashboard") // Redirect after successful login/signup
     } catch (err: any) {
       setError(err.message)
     }

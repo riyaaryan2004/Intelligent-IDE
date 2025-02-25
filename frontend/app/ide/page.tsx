@@ -4,8 +4,10 @@ import { useState, useRef,useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import { Resizable } from "re-resizable";
 import "react-resizable/css/styles.css";
+import { useRouter } from "next/navigation";
 
 export default function IDEPage() {
+  const router = useRouter();
   const [code, setCode] = useState("");
   const [prompt, setPrompt] = useState("");
   const [output, setOutput] = useState("");
@@ -54,13 +56,7 @@ const [projectName, setProjectName] = useState<string | null>(null);
   };
 
   const handleViewAllFiles = () => {
-    // Redirect to the dashboard page with the project ID as a query parameter
-    if (projectId) {
-      window.location.href = `/dashboard?projectId=${projectId}`;
-    } else {
-      // If no project ID is available, just go to the dashboard
-      window.location.href = "/dashboard";
-    }
+      router.push("/dashboard");
   };
   const handleRunCode = async () => {
     setIsLoading(true);

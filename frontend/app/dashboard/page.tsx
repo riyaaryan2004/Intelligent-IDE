@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 // Icons
-import { Cpu, Trash2, Lock, Eye, User, FileCode, Folder, ExternalLink, Code, Search } from "lucide-react";
+import { LogOut, Trash2, Lock, Eye, User, FileCode, Folder, ExternalLink, Code, Search } from "lucide-react";
 
 // Types
 interface User {
@@ -64,6 +64,15 @@ const Dashboard = () => {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     };
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    // Remove auth token from localStorage
+    localStorage.removeItem("authToken");
+    
+    // Redirect to signup page
+    router.push("/signup");
   };
 
   // Get language icon
@@ -234,6 +243,14 @@ const handleOpenInIDE = (project: Project) => {
             </div>
             <Button onClick={() => setIsNewProjectModalOpen(true)}>
               Create File
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handleLogout} 
+              className="flex items-center bg-red-500 hover:bg-red-600 text-white border-red-500 hover:border-red-600"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
             </Button>
           </div>
         </header>

@@ -22,7 +22,7 @@ export default function Home() {
     const isAuthorized = localStorage.getItem("authToken");
     if (isAuthorized) {
       // Redirect to IDE page
-      router.push("/ide");
+      router.push("/dashboard");
     } else {
       // Redirect to signup page
       router.push("/signup");
