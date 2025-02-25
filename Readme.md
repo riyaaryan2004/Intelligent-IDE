@@ -27,15 +27,10 @@ An AI-powered development environment that integrates cutting-edge language mode
 - 🍃 **MongoDB** - NoSQL database
 - 🔐 **JWT** - Authentication and authorization
 - 🔄 **Mongoose** - MongoDB object modeling
-- 📋 **Jest** - Testing framework
 
 ### AI Integration
 - 🧠 **Google Gemini API** - AI model for code generation and analysis
 
-### DevOps
-- 🐳 **Docker** - Containerization
-- ☁️ **Cloud Deployment** - Deployment options
-- 🔄 **CI/CD Pipelines** - Automated testing and deployment
 
 ## 📋 Prerequisites
 
