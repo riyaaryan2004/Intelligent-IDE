@@ -80,7 +80,7 @@ FRONTEND_URL=http://localhost:3000
 ```bash
 npm start
 ```
-Note: For MacOS PORT 5000 is preoccupied by "AirDrop & Handoff" , please it off before using port 5000
+> **📝 Note:** For MacOS PORT 5000 is preoccupied by "AirDrop & Handoff" , please turn it off (System Settings>General>AirDrop & Handoff>AirPlay Reciever) before using port 5000 for backend.
 
 ### Frontend Setup
 
@@ -222,21 +222,34 @@ frontend/
 
 ## 📷 Screenshots
 
-
-![IDE Interface](https://github.com/riyaaryan2004/Intelligent-IDE/blob/main/Photos/IDE_Structure.png)
 *Main IDE interface with code editor and output panel*
 
+![IDE Interface](https://github.com/riyaaryan2004/Intelligent-IDE/blob/main/Photos/IDE_Structure.png)
 
-![Code Generation](https://github.com/riyaaryan2004/Intelligent-IDE/blob/main/Photos/ai_generated_code.png)
+
+
 *Using AI to generate code from natural language prompts*
 
-
-![Code Analysis](https://via.placeholder.com/800x450?text=Code+Analysis)
-*Analyzing code for quality and potential improvements*
+![Code Generation](https://github.com/riyaaryan2004/Intelligent-IDE/blob/main/Photos/ai_generated_code.png)
 
 
-![Debugging](https://via.placeholder.com/800x450?text=Debugging)
-*Debugging interface with variable inspection*
+
+*Dashboard for Users files and progress track*
+
+![File Management](https://github.com/riyaaryan2004/Intelligent-IDE/blob/main/Photos/dashboard.png)
+
+
+
+*Compile/Run Code*
+
+![Compile/Run](https://github.com/riyaaryan2004/Intelligent-IDE/blob/main/Photos/input_testCases.png)
+
+> ⚠️ **Important:** Inputs for the code must be provided before compiling as shown in the Screenshot above 👆
+
+
+*Output of the Compiled Code*
+
+![Output](https://github.com/riyaaryan2004/Intelligent-IDE/blob/main/Photos/output_of_testCases.png)
 
 ## 🔒 Environment Variables
 
